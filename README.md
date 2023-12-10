@@ -148,6 +148,39 @@ Route::resource('users', UserController::class)->only([
 
 ```
 Now you can access your API via "api" prefix and store your API controller in API Folder.
+## 5. Force All API Response to JSON
+Sometime for our API response, we just all the response in JSON format. We can force the response to be json format with Force JSON Middle.
+First, create your middleware.
+```bash
+php artisan make:middleware ForceJsonResponse
+```
+Set the middleware on file.
+```bash
+app/Http/Middleware/ForceJsonResponse.php
+```
+Set the handle
+```php
+public function handle($request, Closure $next){
+    $request->headers->set('Accept', 'application/json');
+    return $next($request);
+}
+```
+This is gonna change all the incoming request just accept application/json as response.
+Activate your middleware for your API on file
+```bash
+app/Http/Kernel.php 
+```
+Add your new middleware
+```php
+protected $middlewareGroups = [        
+    'api' => [
+        \App\Http\Middleware\ForceJsonResponse::class,
+		...
+    ],
+	...
+];
+```
+Now try to error the laravel response with change db with unexist db name. Now, you will know the different.
 ## Overriding Default Models
 You can overidding default models of Sanctum with model 
 ```bash
@@ -173,4 +206,5 @@ public function boot(): void
 ```
 
 # Source
-https://laravel.com/docs/10.x/sanctum#introduction
+- https://laravel.com/docs/10.x/sanctum#introduction
+- https://github.com/LaravelDaily/laravel-tips/blob/master/api.md
