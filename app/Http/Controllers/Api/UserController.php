@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use Illuminate\Routing\Controller;
 
 class UserController extends Controller
 {
@@ -19,9 +20,19 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreUserRequest $request){ 
+    public function store(StoreUserRequest $request){
         // Just procced the valid response
+        $user = User::create([
+            'name'          => $request->name,
+            'email'         => $request->email,
+            'password'      => \bcrypt($request->password)
+        ]);
+        $token = $user->createToken('auth_token')->plainTextToken;
 
+        return response()->json([
+            'access_token' => $token,
+            'token_type'   => 'Bearer',
+        ]);
     }
 
     /**

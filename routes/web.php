@@ -18,11 +18,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::resource('users', UserController::class)->only([
-    'store',
-]);
-
-
 // Route::post('/tokens/create', function (Request $request) {
 //     $token = $request->user()->createToken($request->token_name);
  

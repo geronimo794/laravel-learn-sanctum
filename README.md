@@ -124,7 +124,30 @@ public function failedValidation(Validator $validator){
 }
 ```
 Test again with failed error. And you can reuse this response helper your next response.
+## 4. Organize Your API on Different Namespace Folder
+Sometimes, we don't to mix our normal controller with our API controller. To achive that, we can move our API controller.
+First create folder API on Controllers folder
+```bash
+mkdir app/Http/Controllers/Api
+```
+Move your API Controller to API Folder. And change the namespace to "App\Http\Controllers\Api"
+```php
+namespace App\Http\Controllers\Api;
 
+...
+```
+Open your **web.php** router file, move your resource router to **api.php**
+```php
+use App\Http\Controllers\Api\UserController;
+
+...
+
+Route::resource('users', UserController::class)->only([
+    'store',
+]);
+
+```
+Now you can access your API via "api" prefix and store your API controller in API Folder.
 ## Overriding Default Models
 You can overidding default models of Sanctum with model 
 ```bash
