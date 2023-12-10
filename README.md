@@ -78,6 +78,52 @@ public function failedValidation(Validator $validator)
 }
 ```
 Test your API with failed request.
+## 3. Standarize your response structure with ResponseHelper
+Create new folder and new file
+```bash
+app/Helpers/ResponseHelper.php
+```
+Fill the file with your response standar
+```php
+<?php
+
+namespace App\Helpers;
+
+class ResponseHelper{
+	private static function build(int $httpStatus, bool $fulfilled, mixed $data, mixed $errors, mixed $pagination){
+		$response['statusCode'] = $httpStatus;
+		$response['fulfilled'] = $fulfilled;
+		if(!empty($data)){
+			$response['data'] = $data;
+		}
+		if(!empty($errors)){
+			$response['errors'] = $errors;
+		}
+		if(!empty($pagination)){
+			$response['pagination'] = $pagination;
+		}
+		return $response;
+	}
+	public static function buildError(int $httpStatus, mixed $errors){
+		return self::build($httpStatus, \false, \null, $errors, \null);
+	}
+}
+```
+Use this new response helper on "StoreUserRequest.php"
+```php
+use App\Helpers\ResponseHelper;
+
+...
+
+/**
+ * Overriding function to change the behaviour
+ */
+public function failedValidation(Validator $validator){
+	$response = ResponseHelper::buildError(422, $validator->errors());
+	throw new HttpResponseException(response()->json($response, 422));
+}
+```
+Test again with failed error. And you can reuse this response helper your next response.
 
 ## Overriding Default Models
 You can overidding default models of Sanctum with model 
