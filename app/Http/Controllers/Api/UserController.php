@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Requests\LoginUserRequest;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Hash;
+use App\Helpers\ResponseHelper;
 
 class UserController extends Controller
 {
@@ -25,7 +28,7 @@ class UserController extends Controller
         $user = User::create([
             'name'          => $request->name,
             'email'         => $request->email,
-            'password'      => \bcrypt($request->password)
+            'password'      => Hash::make($request->password)
         ]);
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -58,4 +61,27 @@ class UserController extends Controller
     {
         //
     }
+
+    /**
+     * Login process
+     */
+    public function login(LoginUserRequest $request){
+        $user = User::where('email', $request->email)->first();
+
+        if(!$user){
+            return response()->json(ResponseHelper::buildError(['email' => [ResponseHelper::NOT_FOUND]]), 404);
+        }
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json(ResponseHelper::buildError(['password' => [ResponseHelper::NOT_FOUND]]), 404);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'access_token' => $token,
+            'token_type'   => 'Bearer',
+        ]);
+    }
+
 }

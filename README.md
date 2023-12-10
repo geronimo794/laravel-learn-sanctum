@@ -181,6 +181,107 @@ protected $middlewareGroups = [
 ];
 ```
 Now try to error the laravel response with change db with unexist db name. Now, you will know the different.
+
+## 6. Simulate Register, Login and Check User Token
+We are gonna simulate a register, login, check user token.
+First, write the route for register and login API.
+You can remove this line
+```php
+Route::resource('users', UserController::class)->only([
+    'store',
+]);
+```
+To this line
+```php
+Route::post('register', [UserController::class, 'store']);
+Route::post('login', [UserController::class, 'login']);
+```
+Create new request file for login
+```bash
+app/Http/Requests/LoginUserRequest.php
+```
+Add validation to login user Request
+```php
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use App\Helpers\ResponseHelper;
+use Illuminate\Http\Exceptions\HttpResponseException;
+
+
+class LoginUserRequest extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true;
+    }
+    
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [
+            'email' => 'required|email',
+            'password' => 'required|min:6',
+        ];
+    }
+
+    /**
+     * Overriding function to change the behaviour
+     */
+    public function failedValidation(Validator $validator)
+    {
+        $response = ResponseHelper::buildError($validator->errors());
+        throw new HttpResponseException(response()->json($response, 422));
+    }
+    
+}
+```
+Add login function on file
+```bash
+app/Http/Controllers/Api/UserController.php
+```
+Add this function
+```php
+...
+    /**
+     * Login process
+     */
+    public function login(LoginUserRequest $request){
+        $user = User::where('email', $request->email)->first();
+
+        if(!$user){
+            return response()->json(ResponseHelper::buildError(['email' => [ResponseHelper::NOT_FOUND]]), 404);
+        }
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json(ResponseHelper::buildError(['password' => [ResponseHelper::NOT_FOUND]]), 404);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'access_token' => $token,
+            'token_type'   => 'Bearer',
+        ]);
+    }
+...
+```
+Now you can try to register and login.
+After login, you can use the Bearer token to access request 
+```
+[GET] {{baseUrl}}api/user
+```
+*There is some code refactor on ResponseHelper but it doesn't affect so much.
 ## Overriding Default Models
 You can overidding default models of Sanctum with model 
 ```bash

@@ -8,7 +8,7 @@ use App\Helpers\ResponseHelper;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 
-class StoreUserRequest extends FormRequest
+class LoginUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -26,8 +26,7 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required',
-            'email' => 'required|email|unique:users,email,except,id',
+            'email' => 'required|email',
             'password' => 'required|min:6',
         ];
     }
