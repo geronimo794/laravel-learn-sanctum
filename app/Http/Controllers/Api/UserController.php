@@ -32,10 +32,12 @@ class UserController extends Controller
         ]);
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
+        // Build response
+        $response = ResponseHelper::buildSuccess([
             'access_token' => $token,
             'token_type'   => 'Bearer',
         ]);
+        return response()->json($response, 201);
     }
 
     /**
@@ -73,15 +75,16 @@ class UserController extends Controller
         }
 
         if (!Hash::check($request->password, $user->password)) {
-            return response()->json(ResponseHelper::buildError(['password' => [ResponseHelper::NOT_FOUND]]), 404);
+            return response()->json(ResponseHelper::buildError(['password' => [ResponseHelper::INVALID]]), 401);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
-        return response()->json([
+        $response = ResponseHelper::buildSuccess([
             'access_token' => $token,
             'token_type'   => 'Bearer',
         ]);
+        return response()->json($response);
     }
 
 }
