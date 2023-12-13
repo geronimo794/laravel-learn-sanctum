@@ -449,6 +449,92 @@ class AuthTest extends TestCase
 }
 ```
 Please read carefully about the test case on the comment.
+## 8. Resource Implementation and With User Authorization Validation
+First, let's make a routing group with Laravel Sanctum middleware. You can edit it on "routes/api.php"
+
+```php
+use App\Helpers\ResponseHelper;
+...
+Route::middleware('auth:sanctum')->group(function () {
+    Route::resource('users', UserController::class)->except([
+        'store'
+    ])->missing(function (Request $request) {
+        return response()->json(ResponseHelper::buildNotFound(), 404);
+    });
+});
+```
+Update the authorize function on "app/Http/Requests/UpdateUserRequest.php". Because we just want to allow user that login to change data for it self. It cannot edit another data.
+```php
+/**
+ * Determine if the user is authorized to make this request.
+ */
+public function authorize(): bool{
+    // Compare current data with current logged user
+    return auth()->user()->id == $this->route('user')->id;
+}
+```
+Create rules for our UpdateUserRequest
+```php
+/**
+ * Get the validation rules that apply to the request.
+ *
+ * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+ */
+public function rules(): array
+{
+    return [
+        'name' => 'required',
+        'email' => 'required|email|unique:users,email,'.auth()->user()->id,
+        'password' => 'min:6',
+    ];
+}
+/**
+ * Overriding function to change the behaviour
+ */
+public function failedValidation(Validator $validator)
+{
+    $response = ResponseHelper::buildError($validator->errors());
+    throw new HttpResponseException(response()->json($response, 422));
+}
+```
+Update the update on "app/Http/Controllers/Api/UserController.php"
+```php
+/**
+ * Update the specified resource in storage.
+ */
+public function update(UpdateUserRequest $request, User $user)
+{
+    $user->name = $request->name;
+    $user->email = $request->email;
+
+    if(!empty($request->password)){
+        $user->password = Hash::make($request->password);
+    }
+    if(!$user->save()){
+        $response = ResponseHelper::buildError(['user' => [ResponseHelper::SAVE_FAILED]]);
+        return response()->json($response, 500);
+    }
+    $response = ResponseHelper::buildSuccess($user);
+    return response()->json($response, 200);
+}
+
+```
+Update delete methode on "UserController.php"
+```php
+/**
+ * Remove the specified resource from storage.
+ */
+public function destroy(User $user)
+{
+    if(auth()->user()->id != $user->id){
+        return response()->json(ResponseHelper::buildUnauthorize(), 401);
+    }
+    $user->delete();
+    $response = ResponseHelper::buildSuccess($user);
+    return response()->json($response, 200);
+}
+```
+Now you can delete your resource, but only the logged user can use this for their current data.
 ## Overriding Default Models
 You can overidding default models of Sanctum with model 
 ```bash

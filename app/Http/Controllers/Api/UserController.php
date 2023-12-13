@@ -17,7 +17,9 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
+        // Build response
+        $response = ResponseHelper::buildSuccess(User::all());
+        return response()->json($response, 201);
     }
 
     /**
@@ -45,7 +47,9 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        //
+        // Build response
+        $response = ResponseHelper::buildSuccess($user);
+        return response()->json($response, 201);
     }
 
     /**
@@ -53,7 +57,18 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user)
     {
-        //
+        $user->name = $request->name;
+        $user->email = $request->email;
+
+        if(!empty($request->password)){
+            $user->password = Hash::make($request->password);
+        }
+        if(!$user->save()){
+            $response = ResponseHelper::buildError(['user' => [ResponseHelper::SAVE_FAILED]]);
+            return response()->json($response, 500);
+        }
+        $response = ResponseHelper::buildSuccess($user);
+        return response()->json($response, 200);
     }
 
     /**
@@ -61,7 +76,12 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        //
+        if(auth()->user()->id != $user->id){
+            return response()->json(ResponseHelper::buildUnauthorize(), 401);
+        }
+        $user->delete();
+        $response = ResponseHelper::buildSuccess($user);
+        return response()->json($response, 200);
     }
 
     /**
